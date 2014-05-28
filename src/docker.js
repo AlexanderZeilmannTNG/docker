@@ -673,6 +673,7 @@ Docker.prototype.parseMultiline = function(comment){
     commentData.tags = tags.map(function(line){
       var bits = line.split(' '), tag = {};
       var tagType = tag.type = bits.shift();
+      var parts;
 
       switch(tagType){
         case 'arg':
@@ -681,7 +682,19 @@ Docker.prototype.parseMultiline = function(comment){
           // `@param {typename} paramname Parameter description`
           if(bits[0].charAt(0) == '{') tag.types = grabType(bits).split(/ *[|,\/] */);
           tag.name = bits.shift() || '';
-          tag.description = bits.join(' ');
+          if (tag.name[0] === '[') {
+            tag.name = tag.name.match(/\[(.*)\]/)[1]
+            tag.optional = true;
+            if (tag.name.indexOf('=') !== -1) {
+              parts = tag.name.split('=');
+              tag.name = parts[0];
+              tag.default = parts[1];
+            }
+          }
+          else {
+            tag.optional = false;
+          }
+          tag.description = bits.join(' ').match(/\s*-?\s(.*)/)[1];
           tag.type = 'param';
           break;
 
